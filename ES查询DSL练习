@@ -1,0 +1,871 @@
+GET _search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
+PUT /lib/
+{
+  "settings": {
+    "index":{
+      "number_of_shards":3,
+      "number_of_replicas":0
+    }
+  }
+}
+
+
+PUT /libtest
+
+GET /lib/_settings
+
+GET /libtest/_settings
+
+#增加一条记录，指定ID，用put
+PUT /lib/user/1
+{
+  "first_name":"Logan",
+  "last_name":"Qin",
+  "age":25,
+  "about":"Logan is a Java developer!",
+  "interests":["movie","runing"]
+}
+
+#增加一条记录，不指定ID，用post
+POST /lib/user/
+{
+  "first_name":"Carl",
+  "last_name":"Qin",
+  "age":28,
+  "about":"Logan is a JavaScript developer!",
+  "interests":["movie","runing","read book"]
+}
+
+GET /lib/user/1
+
+GET /lib/user/1?_source=age,interests
+
+#增加一条记录，指定ID，用put
+PUT /lib/user/2
+{
+  "first_name":"QingHu",
+  "last_name":"Qin",
+  "age":25,
+  "about":"Logan is a Java developer!",
+  "interests":["movie","runing"]
+}
+
+
+#用PUT覆盖更新
+PUT /lib/user/2
+{
+  "first_name":"QingHu",
+  "last_name":"Qin",
+  "age":25,
+  "about":"Logan is a Java & Python developer!",
+  "interests":["movie","runing"]
+}
+
+
+GET /lib/user/2
+
+#用POST,部分（局部）更新,只修改age、about
+POST /lib/user/2/_update
+{
+  "doc":{
+    "age":26,
+    "about":"Logan is a Java & Python & ML developer!"
+  }
+  
+}
+
+#删除一条记录
+DELETE /lib/user/1
+
+GET /lib/user/1
+
+#删除一个索引
+DELETE /libtest
+
+#查看所有索引信息
+GET _all/_settings
+
+
+PUT /lib/user/2
+{
+  "first_name":"三",
+  "last_name":"Qin",
+  "age":23,
+  "about":"Logan is a translater!",
+  "interests":["movie","runing","read book"]
+}
+
+PUT /lib/user/3
+{
+  "first_name":"五",
+  "last_name":"Qin",
+  "age":25,
+  "about":"Logan is a C++ developer!",
+  "interests":["movie","runing","read book"]
+}
+
+PUT /lib/user/4
+{
+  "first_name":"Bob",
+  "last_name":"Qin",
+  "age":30,
+  "about":"Bob is a C# developer!",
+  "interests":["movie","runing","read book"]
+}
+
+#根据ID等信息批量获取记录的完整信息
+GET /_mget
+{
+  "docs":[
+    {
+      "_index":"lib",
+      "_type":"user",
+      "_id":1
+    },
+    {
+      "_index":"lib",
+      "_type":"user",
+      "_id":2
+    },
+    {
+      "_index":"lib",
+      "_type":"user",
+      "_id":3
+    },
+    {
+      "_index":"lib",
+      "_type":"user",
+      "_id":4
+    }
+    
+    ]
+}
+
+
+#根据ID等信息批量获取记录的指定信息
+GET /_mget
+{
+  "docs":[
+    {
+      "_index":"lib",
+      "_type":"user",
+      "_id":1,
+      "_source":"age"
+    },
+    {
+      "_index":"lib",
+      "_type":"user",
+      "_id":2,
+      "_source":"about"
+    },
+    {
+      "_index":"lib",
+      "_type":"user",
+      "_id":3,
+      "_source":"interests"
+    },
+    {
+      "_index":"lib",
+      "_type":"user",
+      "_id":4,
+      "_source":"age"
+    }
+    
+    ]
+}
+
+
+#在index、type相同的情况下，根据ID等信息批量获取记录的指定信息
+GET /lib/user/_mget
+{
+  "docs":[
+    {
+      "_id":1
+      
+    },
+    {
+      "_id":2,
+      "_source":"about"
+    },
+    {
+      "_id":3,
+      "_source":"interests"
+    },
+    {
+      "_index":"lib",
+      
+      "_id":4,
+      "_source":"age"
+    }
+    
+    ]
+}
+
+#在index、type相同的情况下，根据ID等信息批量获取记录的完整信息
+GET /lib/user/_mget
+{
+  "ids":["1","3"]
+}
+
+
+### elasticsearch的版本控制
+
+PUT /lib/user/0
+{
+  "first_name":"版本控制测试",
+  "last_name":"Qin",
+  "age":25,
+  "about":"Logan is a C++ developer!",
+  "interests":["movie","runing","read book"]
+}
+
+POST /lib/user/0
+{
+  "doc":{
+    "age":250
+  }
+  
+}
+
+POST /lib/user/0
+{
+  "doc":{
+    "age":2500
+  }
+  
+}
+
+GET /lib/user/0
+
+# 版本不冲突
+POST /lib/user/0?version=3
+{
+  "doc":{
+    "age":25000
+  }
+  
+}
+
+# 版本冲突
+POST /lib/user/0?version=3
+{
+  "doc":{
+    "age":25001
+  }
+  
+}
+
+# 使用外部数据进行版本控制,外部版本号要大于本身的版本号，改变后外部版本将赋值给内部版本
+POST /lib/user/0?version=10&version_type=external
+{
+  "doc":{
+    "age":25001
+  }
+  
+}
+
+
+### mapping
+# 字符串类型，--text,会进行分词；keyword,不进行分词；数值类型--long;integer;short;byte;doube;float,日期类型--date，布尔类型--boolean,二进制类型--binary
+
+
+# 查看mapping的信息
+GET /lib/user/_mapping
+
+
+GET /lib/user/_search?q=age:25
+
+PUT /lib/user/5
+{
+  "first_name":"日期类型测试",
+  "last_name":"Qin",
+  "age":25,
+  "birthday":"1994-08-05",
+  "about":"Logan is a C++ developer!",
+  "interests":["movie","runing","read book"]
+}
+
+# 1994/08/05斜杠的日期格式，es不接受
+PUT /lib/user/6
+{
+  "first_name":"日期类型测试",
+  "last_name":"Qin",
+  "age":25,
+  "birthday":"1994/08/05",
+  "about":"Logan is a C++ developer!",
+  "interests":["movie","runing","read book"]
+}
+
+# text可以单个词查询，不必完整匹配
+GET /lib/user/_search?q=interests:runing
+
+# 日期格式的必须完整匹配
+GET /lib/user/_search?q=birthday:1994-08-05
+
+GET /lib/user/_search?q=birthday:1994-08-5
+
+GET /_settings
+
+PUT /earth/person/1
+{
+  "name":"Logan",
+  "age":"25",
+  "adress":{
+    "city":"深圳市",
+    "area":"宝安区"
+  }
+}
+
+GET /earth/_settings
+
+
+### 基本查询
+
+PUT /book/tool/1
+{
+  "title":"machane learning",
+  "author":"Logan",
+  "year":2018,
+  "content":"Built directly on Spring Boot's innovative approach to enterprise Java, Spring Cloud simplifies distributed, microservice-style architecture by implementing proven patterns to bring resilience, reliability, and coordination to your microservices."
+}
+
+PUT /book/tool/2
+{
+  "title":"springboot learning",
+  "author":"carl",
+  "year":2078,
+  "content":"Spring Boot is designed to get you up and running as quickly as possible, with minimal upfront configuration of Spring. Spring Boot takes an opinionated view of building production-ready applications"
+}
+
+PUT /book/tool/3
+{
+  "title":"python learning",
+  "author":"bob",
+  "year":2016,
+  "content":"Spring Cloud Data Flow CONNECT ANYTHING Connect the Enterprise to the Internet of Anything—mobile devices, sensors, wearables, automobiles, and more. Spring Cloud Data Flow provides a unified service for creating composable data microservices that address streaming and ETL-based data processing patterns."
+}
+
+#（query查询）
+GET /book/tool/_search?q=Logan
+
+GET /book/_settings
+
+
+GET /book/tool/_search?q=content:spring boot
+
+
+GET /book/tool/_search?q=content:spring boot&sort=year:desc
+
+
+#（term查询）--对输入查询关键字不进行分词
+GET /book/tool/_search/
+{
+  "query":{
+    "term":{
+      "year":2018
+    }
+  }
+}
+
+#（terms查询),含有其中一个关键词便可被查出
+GET /book/tool/_search/
+{
+  "query":{
+    "terms":{
+      "title":["python","java"]
+    }
+    
+  }
+}
+
+
+#（terms查询),含有其中一个关键词便可被查出,添加了返回数量的限制（hits的total依旧不变），添加返回属性version，
+GET /book/tool/_search/
+{
+  "from":0,
+  "size":2,
+  "version": true, 
+  "query":{
+    "terms":{
+      "content": ["spring","java"]
+    }
+    
+  }
+}
+
+
+### （match查询）--对输入查询关键字进行分词
+
+GET /book/tool/_search/
+{
+  "from":0,
+  "size":5,
+  "version": true, 
+  "query":{
+    "match":{
+      "content": "spring boot Java  python"
+    }
+    
+  }
+}
+
+# 查询所有
+GET /book/tool/_search/
+{
+  "from":0,
+  "size":5,
+  "version": true, 
+  "query":{
+    "match_all":{}
+    
+  }
+}
+
+# mutli_match查询
+GET /book/tool/_search/
+{
+  "query":{
+    "multi_match": {
+      "query": "abc spring java python",
+      "fields": ["title", "content"]
+    }
+    
+  }
+}
+
+# match_prase查询(短语查询，与短语完全一致，加长版的term),添加返回值的属性限制，*通配符
+GET /book/tool/_search/
+{
+  "_source": {
+    "includes": ["title","aut*"],
+    "excludes": "year"
+  },
+  "query":{
+    "match_phrase": {
+      "content": "Spring Boot is designed"
+     
+    }
+    
+  },
+  "sort": [
+    {
+      "year": {
+        "order": "desc"
+      }
+    }
+  ]
+}
+
+
+# match_prase_prefix查询(短语查询，与短语完全一致，加长版的term),添加返回值的属性限制，*通配符
+GET /book/tool/_search/
+{
+  "_source": {
+    "includes": ["title","aut*"],
+    "excludes": "year"
+  },
+  "query":{
+    "match_phrase": {
+      "content": "Spring Boot"
+     
+    }
+    
+  },
+  "sort": [
+    {
+      "year": {
+        "order": "desc"
+      }
+    }
+  ]
+}
+
+# range查询,包含from,to
+
+GET /book/tool/_search
+{
+  "query": {
+    "range": {
+      "year": {
+        "from": 2016,
+        "to": 2018
+      }
+    }
+  }
+}
+
+# range查询,不包含from,但包含to
+
+GET /book/tool/_search
+{
+  "query": {
+    "range": {
+      "year": {
+        "from": 2016,
+        "to": 2018,
+        "include_lower":false,
+        "include_upper":true
+      }
+    }
+  }
+}
+
+
+# wildcard 查询 使用通配符*（1个或多个）、？（任意一个字符）
+
+GET /book/tool/_search
+{
+  "query": {
+    "wildcard": {
+      "author": "Loga*"
+    }
+  }
+}
+
+# fuzzy 查询
+
+GET /book/tool/_search
+{
+  "query": {
+    "fuzzy":{
+      "author": {
+        "value": "logon"
+      }
+    }
+  }
+}
+
+
+
+# 查询的高亮显示
+
+GET /book/tool/_search
+{
+  "query": {
+    "fuzzy":{
+      "content": {
+        "value": "java"
+      }
+    }
+  },
+  "highlight": {
+    "fields": {
+      "content": {
+        
+      }
+    }
+  }
+}
+
+### 中文的基本查询
+
+PUT /zhcn/
+{
+  "settings": {
+    "number_of_shards": 5,
+    "number_of_replicas": 0
+  },
+  "mappings": {
+    "user":{
+      "properties":{
+        "name":{
+          "type":"text","analyzer":"ik_max_word"
+        },
+        "age":{
+          "type":"text","analyzer":"ik_max_word"
+        },
+        "address":{
+          "type":"text","analyzer":"ik_max_word"
+        },
+        "interests":{
+          "type":"text","analyzer":"ik_max_word"
+        }
+      }
+    }
+  }
+}
+
+PUT /zhcn/user/0
+{
+  "name":"张三",
+  "age":26,
+  "interests":"HTC的收入总计为14.7亿新台币（4767万美元）",
+  "address":"从今年开始至11月30日，HTC共录得收入仅为223.9亿新台币（7.255亿美元），比去年减少了61.47％。在去年同期，这一数字为18.8亿美元；在2017年的年底前，HTC的2017年收入就已经突破20亿美元"
+}
+
+PUT /zhcn/user/1
+{
+  "name":"李四",
+  "age":26,
+  "interests":"苹果公司今天在原总部加利福尼亚州库比蒂诺的Infinite Loop举行了一场演唱会，由屡获殊荣的歌手伊迪娜·门泽尔（Idina Menzel）现场表演",
+  "address":"苹果公司今天在原总部加利福尼亚州库比蒂诺的Infinite Loop举行了一场演唱会，由屡获殊荣的歌手伊迪娜·门泽尔（Idina Menzel）现场表演年同期，这一数字为18.8亿美元；在2017年的年底前，HTC的2017年收入就已经突破20亿美元"
+}
+
+PUT /zhcn/user/2
+{
+  "name":"王五",
+  "age":26,
+  "interests":"苹果公哦啊怕怕哈飞和房价 Loop举行了一场演唱会，由屡获殊荣的歌手伊迪娜·门泽尔（Idina Menzel）现场表演",
+  "address":"苹果公司今天在原总部加利福尼亚州库比蒂诺的Infinite Loop举行了一场演唱啊减肥i哦啊手机费暗杀的年底前，HTC的2017年收入就已经突破20亿美元"
+}
+
+
+GET /zhcn/user/_search
+{
+  "query":{
+    "term":{
+      "name":"三"
+    }
+  }
+}
+
+# 错误语句，[terms] query does not support multiple fields
+GET /zhcn/user/_search
+{
+  "query":{
+    "terms":{
+      "name":["三","si"],
+      "interests": ["HTC"]
+      
+    }
+  }
+}
+
+### filter查询（不计算相关性，可以被chace）
+
+GET /book/tool/_search
+{
+  "query": {
+    "bool":{
+      "filter": [
+        {
+          "term":{
+            "title":"machane"
+          }
+        }]
+    }
+  }
+}
+
+GET /book/tool/_search
+{
+  "query": {
+    "bool":{
+      "filter": [
+        {
+          "terms":{
+            "year":[2016,2018]
+            
+          }
+        }
+      ]
+    }
+  }
+}
+
+
+# bool过滤查询
+
+GET /book/tool/_search
+{
+  "query": {
+    "bool":{
+      "should": [
+        {"term":{"title": "machane"}
+        },
+        {"term":{"content": "java"}
+        }
+      ],
+      "must_not": {
+        "term":{"year":2016}
+      }
+    }
+  }
+}
+
+
+###聚合查询
+
+#求总和
+GET /book/tool/_search
+{
+  "aggs":{
+    "year_of_sum":{
+      "sum":{
+        "field": "year"
+      }
+    }
+  }
+}
+
+#求最小值
+GET /book/tool/_search
+{
+  "aggs":{
+    "year_of_sum":{
+      "min":{
+        "field": "year"
+      }
+    }
+  }
+}
+
+
+#求最大值
+GET /book/tool/_search
+{
+  "aggs":{
+    "year_of_sum":{
+      "max":{
+        "field": "year"
+      }
+    }
+  }
+}
+
+
+
+#求平均值
+GET /book/tool/_search
+{
+  "aggs":{
+    "year_of_sum":{
+      "avg":{
+        "field": "year"
+      }
+    }
+  }
+}
+
+#求基数
+GET /book/tool/_search
+{
+  "aggs":{
+    "year_of_sum":{
+      "cardinality":{
+        "field": "year"
+      }
+    }
+  }
+}
+
+#分组
+GET /book/tool/_search
+{
+  "aggs":{
+    "year_of_sum":{
+      "terms":{
+        "field": "year"
+      }
+    }
+  }
+}
+
+### 复合查询（组合查询）
+
+# boolean 查询
+GET /book/tool/_search
+{
+  "query":{
+    "bool":{
+      "must":{
+        "match":{"title":"machane"}
+      },
+      "must_not": [
+        {"match":{"title":"java"}}
+      ],
+      "should": [
+        {"match":{"content":"java python"}}
+      ]
+     
+    }
+  }
+}
+
+# boolean 查询,添加filter过滤查询
+GET /book/tool/_search
+{
+  "query":{
+    "bool":{
+      "must":{
+        "match":{"title":"machane"}
+      },
+      "must_not": [
+        {"match":{"title":"java"}}
+      ],
+      "should": [
+        {"match":{"content":"java python"}}
+      ],
+      "filter": {"term": {
+        "title": "learning"
+      }}
+     
+    }
+  }
+}
+
+# boolean 查询,添加filter过滤查询，再添加boolean查询
+GET /book/tool/_search
+{
+  "query":{
+    "bool":{
+      "must":{
+        "match":{"title":"machane"}
+      },
+      "must_not": [
+        {"match":{"title":"java"}}
+      ],
+      "should": [
+        {"match":{"content":"java python"}}
+      ],
+      "filter": {
+        "bool":{
+          "must":{
+            "match":{"title":"machane"}
+            },
+          "should": [
+             {"match":{"content":"java python"}}
+           ]
+        }
+      }
+    }
+  }
+}
+
+#constant——score查询,不计算相关度分数
+GET /book/tool/_search
+{
+  "query": {
+    "constant_score": {
+      "filter": {
+        "term":{"author":"logan"}
+      },
+      "boost": 1.2
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
